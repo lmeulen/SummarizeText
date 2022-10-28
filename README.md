@@ -4,6 +4,8 @@ A Python class to generate a summary for a given text or text file.
 
 Usage:
 ```
+summ =  Summarizer(language='dutch', summary_length=3)
+# or (defaults to dutch, summary length of 3:
 summ =  Summarizer()
 
 # Initialize manualy
