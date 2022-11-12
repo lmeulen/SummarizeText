@@ -18,22 +18,27 @@ class Summarizer:
         words in the text
     language : str
         the current selected language. The stop words set is language specific
-    summary_legth : int
+    summary_length : int
         the default number of sentences to use for the summary.
+    balance_length : bool
+        determines if the sentence weight is weighted based on sentence length
 
     """
     
     stop_words:set = {}
     language:str = None
     summary_length:int = 0
+    balance_length:bool = False
     
-    def __init__(self, language:str='dutch', summary_length:int=3):
+    def __init__(self, language:str='dutch', summary_length:int=3, balance_length=False):
         """
         :param str language: The language to use, defaults to 'dutch'
-        :paran int summary_length: The default length for the summary to generate, defaults to 3
+        :param int summary_length: The default length for the summary to generate, defaults to 3
+        :param bool balance_length: Balance sentences on lebgth, default to False
         """
         self.set_language(language)
         self.set_summary_length(summary_length)
+        self.set_balance_length(balance_length)
     
     def set_language(self, lang:str) -> None:
         """
@@ -80,7 +85,16 @@ class Summarizer:
         :param int summary_length: The new default length
         """
         self.summary_length = summary_length
-    
+
+    def set_balance_length(self, balance_length:bool) -> None:
+        """
+        Sets the swith if the sentence weights need to weighted on
+        sentence length. This might improve performance if the text
+        contains a variety of short and long sentences.
+        :param bool balance_length: new vale
+        """
+        self.balance_length = balance_length
+
     def summarize(self, text:str or list, summary_length:int=None) -> str:
         """
         Summarize the given text. The text can either be a string or a list of
@@ -125,10 +139,13 @@ class Summarizer:
         sentence_weights={}
         for sent in sentences:
             sentence_weights[sent] = 0
-            for word in word_tokenize(sent) :  
+            tokens = word_tokenize(sent)
+            for word in tokens:  
                 word = word.lower()
                 if word in word_weights.keys():            
                     sentence_weights[sent] += word_weights[word]
+            if self.balance_length and (len(tokens) > 0):
+                sentence_weights[sent] = sentence_weights[sent] / len(tokens)
         highest_weights = sorted(sentence_weights.values())[-summary_length:]
 
         # The summary consists of the sentences with the highest sentence weight, in the
@@ -189,7 +206,7 @@ class Summarizer:
         tokens = word_tokenize(text)
         words = [word.lower() for word in tokens]
 
-        # Determine for eah language how often the given text contains a stop 
+        # Determine for each language how often the given text contains a stop 
         # word of the specific language. This is done for all languages supported
         # by NLTK corpus.
         for language in stopwords.fileids():
